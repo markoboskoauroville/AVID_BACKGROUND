@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stop the Background AI in Avid Media Composer</title>
+<meta name="description" content="A field guide for broadcast editors: what Media Composer runs in the background, why it slows the machine, and every place you can switch it off.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0b0e13;
+  --panel:#141a22;
+  --avid:#1b222c;
+  --avid-hi:#242d39;
+  --line:#28313d;
+  --line2:#3a4553;
+  --gold:#e0a340;
+  --gold-dim:#7a5a24;
+  --cyan:#4dd6e8;
+  --red:#e5534b;
+  --text:#cdd9e5;
+  --muted:#7c8a9a;
+  --white:#f0f6fc;
+  --disp:'Barlow Condensed',"Arial Narrow",sans-serif;
+  --body:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--ink);color:var(--text);
+  font-family:var(--body);font-size:16px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:940px;margin:0 auto;padding:0 24px}
+
+/* ---------- type ---------- */
+h1,h2,h3,h4{font-family:var(--disp);font-weight:600;line-height:1.05;margin:0;color:var(--white)}
+h1{font-size:clamp(40px,7.5vw,78px);text-transform:uppercase;letter-spacing:.005em}
+h2{font-size:clamp(26px,4vw,40px);text-transform:uppercase;letter-spacing:.01em}
+h3{font-size:23px;letter-spacing:.01em;color:var(--white)}
+h4{font-size:18px;letter-spacing:.02em;text-transform:uppercase;color:var(--gold)}
+p{margin:0 0 15px}
+a{color:var(--cyan)}
+.eyebrow{
+  font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);margin:0 0 12px
+}
+.lede{font-size:19px;line-height:1.6;color:#b6c4d2}
+.muted{color:var(--muted)}
+code,.k{
+  font-family:var(--mono);font-size:.87em;background:#1a222c;border:1px solid var(--line);
+  padding:1px 6px;border-radius:4px;color:var(--gold);white-space:nowrap
+}
+.path{font-family:var(--mono);font-size:14px;color:var(--cyan);line-height:1.9}
+.path b{color:var(--white);font-weight:500}
+
+/* ---------- topbar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;background:rgba(11,14,19,.94);
+  border-bottom:1px solid var(--line);
+}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:54px;gap:16px}
+.brand{font-family:var(--disp);font-size:19px;text-transform:uppercase;letter-spacing:.06em;color:var(--white)}
+.brand span{color:var(--gold)}
+.ver{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em}
+
+/* ---------- hero ---------- */
+.hero{padding:64px 0 8px}
+.hero h1{margin-bottom:18px}
+.hero h1 em{font-style:normal;color:var(--gold)}
+.hero .lede{max-width:66ch}
+.meta{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:26px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase
+}
+.tag{border:1px solid var(--line2);border-radius:999px;padding:5px 13px;color:var(--muted)}
+.tag.on{border-color:var(--gold-dim);color:var(--gold)}
+a.tag.dl{
+  background:var(--gold);border-color:var(--gold);color:#12161d;font-weight:600;
+  text-decoration:none;transition:background .15s ease
+}
+a.tag.dl:hover,a.tag.dl:focus-visible{background:#f0b757}
+
+/* ---------- monitor (signature) ---------- */
+.monitor{
+  margin:42px 0 8px;background:var(--avid);border:1px solid var(--line2);border-radius:6px;
+  overflow:hidden
+}
+.monitor-head{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;background:#20293480;
+  border-bottom:1px solid var(--line2);
+  font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)
+}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex:none}
+.dot.pulse{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.proc{display:grid;grid-template-columns:1fr 88px 62px;gap:12px;align-items:center;
+  padding:11px 14px;border-bottom:1px solid #222b36;font-family:var(--mono);font-size:12.5px}
+.proc:last-child{border-bottom:0}
+.proc .nm{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proc .nm i{font-style:normal;color:var(--muted);font-size:11px;display:block;letter-spacing:.02em}
+.bar{height:5px;background:#0f151d;border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold)}
+.bar.lo i{background:var(--gold-dim)}
+.pc{text-align:right;color:var(--gold);font-size:12px}
+.pc.lo{color:var(--muted)}
+.monitor-foot{padding:10px 14px;background:#161d26;border-top:1px solid var(--line2);
+  font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em}
+
+/* ---------- sections ---------- */
+section{padding:56px 0;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.sec-head{margin-bottom:30px}
+.sec-head h2{margin-bottom:10px}
+
+/* ---------- service cards ---------- */
+.svc{border:1px solid var(--line);border-radius:6px;background:var(--panel);
+  padding:20px 22px;margin-bottom:14px}
+.svc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:9px}
+.svc h3{font-size:21px}
+.chip{
+  flex:none;font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+  border:1px solid var(--gold-dim);color:var(--gold);border-radius:999px;padding:4px 11px;white-space:nowrap
+}
+.chip.off{border-color:#2b5a63;color:var(--cyan)}
+.chip.care{border-color:#5e3b38;color:var(--red)}
+.svc p{margin-bottom:0;font-size:15.4px}
+.svc p + p{margin-top:10px}
+.proc-name{font-family:var(--mono);font-size:12px;color:var(--muted);margin-top:11px;
+  padding-top:11px;border-top:1px solid var(--line)}
+.proc-name b{color:var(--cyan);font-weight:500}
+
+/* ---------- steps ---------- */
+.step{display:grid;grid-template-columns:64px 1fr;gap:24px;padding:30px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0;padding-top:6px}
+.step-where{
+  font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold);border-right:1px solid var(--line);padding-right:14px;
+  line-height:1.5;padding-top:5px
+}
+.step-body h3{margin-bottom:12px}
+.step-body ol{margin:14px 0 0;padding-left:20px}
+.step-body ol li{margin-bottom:9px;padding-left:4px}
+.step-body ol li::marker{color:var(--gold);font-family:var(--mono);font-size:13px}
+.note{
+  border-left:2px solid var(--gold);background:#181e26;padding:12px 16px;margin:18px 0 0;
+  font-size:14.6px;color:#b8c5d3;border-radius:0 4px 4px 0
+}
+.note b{color:var(--gold);font-weight:600}
+.note.cy{border-left-color:var(--cyan)}
+.note.cy b{color:var(--cyan)}
+.note.rd{border-left-color:var(--red)}
+.note.rd b{color:var(--red)}
+
+/* ---------- figure ---------- */
+figure{margin:22px 0 0}
+figure svg{width:100%;height:auto;display:block;border:1px solid var(--line2);border-radius:5px;background:var(--avid)}
+figcaption{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:9px;letter-spacing:.05em}
+
+/* ---------- table ---------- */
+.tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:14.4px}
+.tbl th{
+  font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);
+  text-align:left;padding:10px 12px;border-bottom:1px solid var(--line2);font-weight:500;vertical-align:bottom
+}
+.tbl td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:first-child{color:var(--white);font-weight:500;width:31%}
+.tbl .mono{font-family:var(--mono);font-size:12.6px;color:var(--cyan)}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);padding:40px 0 60px;font-size:14px;color:var(--muted)}
+footer h4{margin-bottom:14px}
+footer ul{margin:0;padding-left:18px}
+footer li{margin-bottom:7px}
+footer a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+footer a:hover{color:var(--cyan)}
+.sig{margin-top:28px;padding-top:20px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#5c6875}
+
+@media (max-width:640px){
+  .step{grid-template-columns:1fr;gap:12px}
+  .step-where{border-right:0;border-left:2px solid var(--gold);padding:0 0 0 12px}
+  .proc{grid-template-columns:1fr 60px 48px;font-size:11.5px}
+  .tbl td:first-child{width:38%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap">
+  <div class="brand">BACKGROUND <span>OFF</span></div>
+  <div class="ver">AVID MEDIA COMPOSER &nbsp;/&nbsp; v1 (a)</div>
+</div></div>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Field guide for editors</p>
+  <h1>Stop the AI that is<br><em>eating your machine</em></h1>
+  <p class="lede">Media Composer transcribes every clip in every bin, indexes every word anyone says in your project, and runs a separate transcode and render engine outside the application. All of it is on by default. On a busy newsroom workstation it competes with playback for the same CPU and the same disk, and you feel it as stutter, slow bin opening and lag on the timeline.</p>
+  <p class="lede" style="margin-top:16px">This guide explains what each background process actually does, then shows you every place it can be switched off, from a single bin all the way to a setting that applies to every project on the machine.</p>
+  <div class="meta">
+    <a class="tag dl" href="1pdf_avid_background_services_nova_tv_v1.pdf" download>Download the printable handout, PDF</a>
+    <span class="tag on">Read time 10 min</span>
+    <span class="tag">Media Composer 2023.8 and newer</span>
+    <span class="tag">Windows and macOS</span>
+    <span class="tag">Reversible</span>
+  </div>
+
+  <div class="monitor">
+    <div class="monitor-head"><span class="dot pulse"></span> What is running while you edit</div>
+    <div class="proc"><div class="nm">PhraseFind AI indexing<i>transcribes audio, builds the transcript database</i></div><div class="bar"><i style="width:88%"></i></div><div class="pc">heavy</div></div>
+    <div class="proc"><div class="nm">Transcript engine<i>every bin included unless you exclude it</i></div><div class="bar"><i style="width:74%"></i></div><div class="pc">heavy</div></div>
+    <div class="proc"><div class="nm">Avid Background Services<i>background transcode, consolidate and render</i></div><div class="bar"><i style="width:61%"></i></div><div class="pc">heavy</div></div>
+    <div class="proc"><div class="nm">Dynamic Media Folders<i>watch folders that ingest on their own</i></div><div class="bar lo"><i style="width:30%"></i></div><div class="pc lo">idle</div></div>
+    <div class="proc"><div class="nm">Avid Link<i>licensing, notifications, feeds, starts at login</i></div><div class="bar lo"><i style="width:22%"></i></div><div class="pc lo">low</div></div>
+    <div class="proc"><div class="nm">Avid Media Indexer<i>shared storage scanning, NEXIS and MediaCentral</i></div><div class="bar lo"><i style="width:26%"></i></div><div class="pc lo">low</div></div>
+    <div class="monitor-foot">Avid rates PhraseFind AI and ScriptSync AI at 24 GB RAM minimum, and background transcode, render and Dynamic Media Folders at 32 GB recommended, on top of what your edit needs.</div>
+  </div>
+</header>
+
+<!-- ===================== WHAT IS RUNNING ===================== -->
+<section id="what">
+  <div class="sec-head">
+    <p class="eyebrow">Part one</p>
+    <h2>What is actually running</h2>
+    <p class="lede">Six separate things, and they are not all the same animal. Two live inside Media Composer, two run as their own programs beside it, and two are system level. Knowing which is which tells you where to go to switch each one off.</p>
+  </div>
+
+  <div class="svc">
+    <div class="svc-top"><h3>PhraseFind AI indexing</h3><span class="chip">Safe to stop</span></div>
+    <p>This is the big one. Since version 2023.8 Media Composer replaced the old phonetic search with real AI transcription that runs entirely on your machine, with no internet connection. When media arrives in a project, the indexer reads the audio of every clip and writes a full text transcript into a database, so that later you can type a word and jump to the moment somebody said it.</p>
+    <p>Avid states plainly in its own release notes that indexing is a resource intensive operation which may impact the performance of Media Composer. On a newsroom machine receiving fresh material all day, it never really finishes, because more media keeps arriving.</p>
+    <p class="proc-name">Feeds <b>PhraseFind AI</b>, <b>ScriptSync AI</b> and the <b>Transcript Tool</b>. If you never search for spoken words and never cut from a transcript, you are paying for something you do not use.</p>
+  </div>
+
+  <div class="svc">
+    <div class="svc-top"><h3>The transcript engine, bin by bin</h3><span class="chip">Safe to stop</span></div>
+    <p>By default Media Composer will create a transcription for all media in a project. Avid acknowledges this is often wasteful, because music, sound effects and camera media without usable dialogue gain nothing from being transcribed. Every bin you leave included is more audio queued for processing.</p>
+    <p>From version 2024.6 onward you can include or exclude individual bins, and the Bin Container sidebar tells you the state of each one at a glance.</p>
+    <p class="proc-name">Controlled in three places: <b>Project settings</b>, the <b>Transcript Settings</b> window, and a <b>right click on any bin</b>.</p>
+  </div>
+
+  <div class="svc">
+    <div class="svc-top"><h3>Avid Background Services</h3><span class="chip">Safe to stop</span></div>
+    <p>A separate program that starts with the computer and keeps running whether or not Media Composer is open. It is the engine behind background transcode, background consolidate, background render and Dynamic Media Folders. Anything you tick as a background job is handed to this service and chewed through while you edit.</p>
+    <p>You control it from an icon in the Windows taskbar or the macOS menu bar, not from inside Media Composer. The same icon opens the Background Queue window, which is where you find out whether something is silently working through a list of jobs right now.</p>
+    <p class="proc-name">Process name on Windows: <b>AvidBackgroundServicesManager.exe</b>. Formerly called Avid Editor Services Manager.</p>
+  </div>
+
+  <div class="svc">
+    <div class="svc-top"><h3>Dynamic Media Folders</h3><span class="chip">Safe to stop</span></div>
+    <p>Watch folders. You point one at a directory, and anything dropped there is ingested and transcoded automatically against a profile, without anybody pressing a button. Useful in a dailies workflow, pure overhead if nobody set it up on purpose. It depends on Background Services, so stopping those stops this too.</p>
+    <p class="proc-name">Not available on macOS Catalina and later, so on a modern Mac this one is already off.</p>
+  </div>
+
+  <div class="svc">
+    <div class="svc-top"><h3>Avid Link</h3><span class="chip care">Check before stopping</span></div>
+    <p>Launches at login, sits in the background, handles your Avid account, product updates, marketplace feeds and notifications. It is the lightest of the six, but it is also the one most people are surprised to find running, because it offers no visible option to stop starting itself.</p>
+    <p class="proc-name">Warning: on subscription and floating licences, Avid Link is part of how the licence is checked. Do not remove it on a facility machine without asking your systems engineer first.</p>
+  </div>
+
+  <div class="svc">
+    <div class="svc-top"><h3>Avid Media Indexer</h3><span class="chip care">Leave alone on shared storage</span></div>
+    <p>Scans and catalogues media on storage so that editing systems can find it. On a standalone workstation with local drives it does very little. On a facility connected to NEXIS or MediaCentral it is load bearing, because it is how shared media gets discovered at all.</p>
+    <p class="proc-name">If your workstation sees shared workspaces, treat this as untouchable and let the engineering team decide.</p>
+  </div>
+</section>
+
+<!-- ===================== HOW TO DISABLE ===================== -->
+<section id="disable">
+  <div class="sec-head">
+    <p class="eyebrow">Part two</p>
+    <h2>Every place you can switch it off</h2>
+    <p class="lede">Work outward, from the narrowest setting to the widest. The first three live inside Media Composer and are yours to change. The last two reach outside the application, so read the caution at the end before you touch them on a station that is not your own.</p>
+  </div>
+
+  <div class="step">
+    <div class="step-where">In the<br>project</div>
+    <div class="step-body">
+      <h3>Stop new bins being enrolled, and pause while you cut</h3>
+      <p>Two checkboxes here do most of the work, and they survive for the life of the project. The first stops transcription from stealing cycles at exactly the moment you need them, which is while your hands are on the keyboard. The second stops the pile of work growing every time somebody makes a bin.</p>
+      <ol>
+        <li>Open <span class="k">Settings</span> then the <span class="k">Project</span> tab, and choose <span class="k">Transcript</span>.</li>
+        <li>Tick <span class="k">Pause background transcription while editing</span>. Transcription now halts as soon as you start working and only resumes after roughly ten seconds of inactivity.</li>
+        <li>In the same Transcript Settings window, untick <span class="k">Include all new bins in transcription</span>. New bins are no longer enrolled automatically.</li>
+      </ol>
+      <div class="note"><b>Worth knowing.</b> These are project settings, not application settings, so a brand new project starts with Avid's defaults again. The last step in this guide shows you how to make the choice stick for every future project.</div>
+      <figure>
+        <svg viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reconstruction of the Transcript settings panel showing the two checkboxes to change">
+          <rect width="860" height="320" fill="#1b222c"/>
+          <rect x="20" y="18" width="820" height="284" rx="4" fill="#212a35" stroke="#3a4553"/>
+          <rect x="20" y="18" width="820" height="34" rx="4" fill="#2b3541"/>
+          <rect x="20" y="44" width="820" height="8" fill="#2b3541"/>
+          <text x="38" y="40" font-family="IBM Plex Sans,sans-serif" font-size="13" fill="#e8f0f7">Transcript Settings  ·  Current Project</text>
+          <circle cx="822" cy="35" r="6" fill="#3a4553"/>
+          <line x1="20" y1="52" x2="840" y2="52" stroke="#3a4553"/>
+
+          <text x="42" y="86" font-family="IBM Plex Sans,sans-serif" font-size="12" fill="#7c8a9a" letter-spacing="1.4">GENERAL</text>
+
+          <rect x="42" y="104" width="15" height="15" rx="2" fill="#0f151d" stroke="#e0a340" stroke-width="2"/>
+          <path d="M45.5 111.5 l3 3.5 l6 -7" stroke="#e0a340" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="70" y="116" font-family="IBM Plex Sans,sans-serif" font-size="14" fill="#f0f6fc">Pause background transcription while editing</text>
+          <rect x="34" y="96" width="470" height="32" rx="4" fill="none" stroke="#e0a340" stroke-opacity=".55" stroke-width="1.5"/>
+          <text x="520" y="116" font-family="IBM Plex Mono,monospace" font-size="11.5" fill="#e0a340">◄ TICK THIS</text>
+
+          <rect x="42" y="150" width="15" height="15" rx="2" fill="#0f151d" stroke="#5b6674" stroke-width="2"/>
+          <text x="70" y="162" font-family="IBM Plex Sans,sans-serif" font-size="14" fill="#f0f6fc">Include all new bins in transcription</text>
+          <rect x="34" y="142" width="470" height="32" rx="4" fill="none" stroke="#e0a340" stroke-opacity=".55" stroke-width="1.5"/>
+          <text x="520" y="162" font-family="IBM Plex Mono,monospace" font-size="11.5" fill="#e0a340">◄ CLEAR THIS</text>
+
+          <line x1="42" y1="192" x2="818" y2="192" stroke="#2f3945"/>
+          <text x="42" y="220" font-family="IBM Plex Sans,sans-serif" font-size="12" fill="#7c8a9a" letter-spacing="1.4">LANGUAGE</text>
+          <text x="42" y="250" font-family="IBM Plex Sans,sans-serif" font-size="14" fill="#a9b7c5">Language hint</text>
+          <rect x="180" y="234" width="200" height="24" rx="3" fill="#161d26" stroke="#3a4553"/>
+          <text x="192" y="251" font-family="IBM Plex Sans,sans-serif" font-size="13" fill="#cdd9e5">Auto detect</text>
+          <path d="M362 244 l6 0 l-3 5 z" fill="#7c8a9a"/>
+          <text x="400" y="251" font-family="IBM Plex Sans,sans-serif" font-size="12" fill="#5c6875">set per project, not globally</text>
+
+          <rect x="668" y="268" width="72" height="24" rx="3" fill="#2b3541" stroke="#4a5563"/>
+          <text x="690" y="284" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#cdd9e5">Cancel</text>
+          <rect x="750" y="268" width="68" height="24" rx="3" fill="#3d4a58" stroke="#5b6674"/>
+          <text x="775" y="284" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#f0f6fc">OK</text>
+        </svg>
+        <figcaption>Settings &gt; Project &gt; Transcript. Drawn reconstruction, exact wording may shift slightly between releases.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-where">In the<br>bin</div>
+    <div class="step-body">
+      <h3>Exclude the bins that will never need a transcript</h3>
+      <p>Music, effects, graphics, mute camera material, archive and stock. None of it benefits from transcription, and all of it queues by default. Excluding a bin is instant and the sidebar labels the result, so anyone sitting down at the station can see the state without opening a menu.</p>
+      <ol>
+        <li>Right click the bin in the Bin Container sidebar.</li>
+        <li>Choose <span class="k">Exclude Bin from Transcription</span>.</li>
+        <li>Check the label that appears to the right of the bin name. It reads <span class="k">Transcription Off</span> when the bin is excluded.</li>
+        <li>To put a bin back into the queue later, right click it again and choose <span class="k">Include Bin in Transcription</span>.</li>
+      </ol>
+      <div class="note cy"><b>Fastest habit to build.</b> When you create a bin for music or effects, exclude it in the same breath as naming it. It costs one second and saves the machine an hour.</div>
+      <figure>
+        <svg viewBox="0 0 860 330" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reconstruction of the bin right click menu with Exclude Bin from Transcription highlighted">
+          <rect width="860" height="330" fill="#1b222c"/>
+          <rect x="20" y="18" width="330" height="294" rx="4" fill="#212a35" stroke="#3a4553"/>
+          <rect x="20" y="18" width="330" height="30" rx="4" fill="#2b3541"/>
+          <rect x="20" y="40" width="330" height="8" fill="#2b3541"/>
+          <text x="36" y="38" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#e8f0f7">Bin Container</text>
+
+          <g font-family="IBM Plex Sans,sans-serif" font-size="13">
+            <path d="M40 70 l7 0 l0 -4 l16 0 l0 14 l-23 0 z" fill="#8fa2b5"/>
+            <text x="72" y="79" fill="#cdd9e5">01 RUSHES</text>
+            <text x="240" y="79" font-size="10.5" fill="#5c6875" font-family="IBM Plex Mono,monospace">On</text>
+
+            <path d="M40 104 l7 0 l0 -4 l16 0 l0 14 l-23 0 z" fill="#8fa2b5"/>
+            <text x="72" y="113" fill="#cdd9e5">02 INTERVIEWS</text>
+            <text x="240" y="113" font-size="10.5" fill="#5c6875" font-family="IBM Plex Mono,monospace">On</text>
+
+            <rect x="30" y="126" width="310" height="24" fill="#31506b"/>
+            <path d="M40 138 l7 0 l0 -4 l16 0 l0 14 l-23 0 z" fill="#cfe0f0"/>
+            <text x="72" y="147" fill="#ffffff">03 MUSIC</text>
+            <text x="240" y="147" font-size="10.5" fill="#4dd6e8" font-family="IBM Plex Mono,monospace">Off</text>
+
+            <path d="M40 172 l7 0 l0 -4 l16 0 l0 14 l-23 0 z" fill="#8fa2b5"/>
+            <text x="72" y="181" fill="#cdd9e5">04 SFX</text>
+            <text x="240" y="181" font-size="10.5" fill="#4dd6e8" font-family="IBM Plex Mono,monospace">Off</text>
+
+            <path d="M40 206 l7 0 l0 -4 l16 0 l0 14 l-23 0 z" fill="#8fa2b5"/>
+            <text x="72" y="215" fill="#cdd9e5">05 GRAFIKA</text>
+            <text x="240" y="215" font-size="10.5" fill="#4dd6e8" font-family="IBM Plex Mono,monospace">Off</text>
+
+            <path d="M40 240 l7 0 l0 -4 l16 0 l0 14 l-23 0 z" fill="#8fa2b5"/>
+            <text x="72" y="249" fill="#cdd9e5">06 SEQUENCES</text>
+            <text x="240" y="249" font-size="10.5" fill="#5c6875" font-family="IBM Plex Mono,monospace">On</text>
+          </g>
+          <text x="228" y="290" font-family="IBM Plex Mono,monospace" font-size="10" fill="#5c6875" letter-spacing="1">STATE COLUMN ▲</text>
+
+          <!-- context menu -->
+          <rect x="352" y="128" width="280" height="150" rx="3" fill="#2b3541" stroke="#4a5563"/>
+          <g font-family="IBM Plex Sans,sans-serif" font-size="13" fill="#cdd9e5">
+            <text x="370" y="152">Open Bin in New Tab</text>
+            <text x="370" y="176">Duplicate</text>
+            <text x="370" y="200">Rename</text>
+            <line x1="360" y1="212" x2="624" y2="212" stroke="#4a5563"/>
+            <rect x="356" y="220" width="272" height="26" rx="2" fill="#e0a340"/>
+            <text x="370" y="238" fill="#1b222c" font-weight="600">Exclude Bin from Transcription</text>
+            <text x="370" y="266" fill="#7c8a9a">Include Bin in Transcription</text>
+          </g>
+          <path d="M648 233 l-14 0" stroke="#e0a340" stroke-width="1.6"/>
+          <text x="656" y="238" font-family="IBM Plex Mono,monospace" font-size="11.5" fill="#e0a340">CLICK HERE</text>
+        </svg>
+        <figcaption>Right click any bin. The sidebar keeps a visible record of which bins are excluded.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-where">In the<br>find<br>window</div>
+    <div class="step-body">
+      <h3>Stop the indexer itself</h3>
+      <p>This is the switch Avid points to in its own release notes when performance suffers, and it is the one most editors never find, because it hides behind a small gear in the bottom corner of a window nobody opens. Stopping the indexer halts transcription work without touching any other service.</p>
+      <ol>
+        <li>Go to <span class="k">Edit</span> then <span class="k">Find</span> to open the Find window.</li>
+        <li>Click the <span class="k">gear icon</span> in the lower left corner to reach Search Settings.</li>
+        <li>Choose <span class="k">Stop PhraseFind AI Indexing</span> to stop it until you deliberately start it again, or <span class="k">Pause All Indexing</span> if you only want quiet for the next hour.</li>
+        <li>Confirm it worked. The indicator beside PhraseFind AI Index turns red when indexing is stopped.</li>
+        <li>From version 2025.6 the same start and stop control is also on the Transcript Tool Fast Menu, if you prefer to reach it from there.</li>
+      </ol>
+      <div class="note"><b>This one is per project.</b> Stopping the indexer applies to the project you have open, so on a station that opens a different project every shift you must repeat it, or set it once as a site setting as described below.</div>
+      <div class="note cy" style="margin-top:12px"><b>While you are in there.</b> The same gear menu holds <b>Manage Transcripts</b>, which lets you delete transcripts already written for a project and reclaim the space. There is also a Search Data Directory setting, which controls where index data is written. Switching it from Default to Local Default keeps that traffic off shared storage.</div>
+      <figure>
+        <svg viewBox="0 0 860 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reconstruction of the Find window gear menu showing Stop PhraseFind AI Indexing">
+          <rect width="860" height="360" fill="#1b222c"/>
+          <rect x="20" y="18" width="820" height="324" rx="4" fill="#212a35" stroke="#3a4553"/>
+          <rect x="20" y="18" width="820" height="32" rx="4" fill="#2b3541"/>
+          <rect x="20" y="42" width="820" height="8" fill="#2b3541"/>
+          <text x="38" y="39" font-family="IBM Plex Sans,sans-serif" font-size="13" fill="#e8f0f7">Find</text>
+
+          <rect x="40" y="66" width="470" height="28" rx="3" fill="#161d26" stroke="#3a4553"/>
+          <text x="54" y="85" font-family="IBM Plex Sans,sans-serif" font-size="13" fill="#5c6875">Search</text>
+          <rect x="524" y="66" width="120" height="28" rx="3" fill="#2b3541" stroke="#4a5563"/>
+          <text x="546" y="85" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#cdd9e5">PhraseFind AI</text>
+          <circle cx="662" cy="80" r="5" fill="#e5534b"/>
+          <text x="676" y="85" font-family="IBM Plex Mono,monospace" font-size="11" fill="#e5534b">INDEXING STOPPED</text>
+
+          <line x1="40" y1="112" x2="820" y2="112" stroke="#2f3945"/>
+          <g font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#4a5563">
+            <text x="40" y="140">No results</text>
+          </g>
+
+          <!-- gear menu popup -->
+          <rect x="66" y="150" width="300" height="152" rx="3" fill="#2b3541" stroke="#4a5563"/>
+          <g font-family="IBM Plex Sans,sans-serif" font-size="13">
+            <text x="84" y="174" fill="#cdd9e5">Search Data Directory</text>
+            <path d="M344 166 l-7 0 l3.5 6 z" fill="#7c8a9a"/>
+            <text x="84" y="200" fill="#cdd9e5">Manage Transcripts…</text>
+            <line x1="74" y1="212" x2="358" y2="212" stroke="#4a5563"/>
+            <text x="84" y="236" fill="#cdd9e5">Pause All Indexing</text>
+            <rect x="70" y="248" width="292" height="26" rx="2" fill="#e0a340"/>
+            <text x="84" y="266" fill="#1b222c" font-weight="600">Stop PhraseFind AI Indexing</text>
+            <text x="84" y="292" fill="#7c8a9a">Start PhraseFind AI Indexing</text>
+          </g>
+
+          <!-- gear icon -->
+          <g transform="translate(48,312)">
+            <circle cx="0" cy="0" r="11" fill="none" stroke="#e0a340" stroke-width="1.6"/>
+            <circle cx="0" cy="0" r="4" fill="none" stroke="#e0a340" stroke-width="1.6"/>
+            <g stroke="#e0a340" stroke-width="1.6" stroke-linecap="round">
+              <line x1="0" y1="-14" x2="0" y2="-11"/><line x1="0" y1="11" x2="0" y2="14"/>
+              <line x1="-14" y1="0" x2="-11" y2="0"/><line x1="11" y1="0" x2="14" y2="0"/>
+              <line x1="-10" y1="-10" x2="-8" y2="-8"/><line x1="8" y1="8" x2="10" y2="10"/>
+              <line x1="10" y1="-10" x2="8" y2="-8"/><line x1="-8" y1="8" x2="-10" y2="10"/>
+            </g>
+          </g>
+          <path d="M64 306 l0 -8" stroke="#e0a340" stroke-width="1.4" stroke-dasharray="3 3"/>
+          <text x="76" y="318" font-family="IBM Plex Mono,monospace" font-size="11.5" fill="#e0a340">GEAR, LOWER LEFT CORNER</text>
+        </svg>
+        <figcaption>Edit &gt; Find, then the gear in the lower left. The red indicator is your confirmation that indexing has actually stopped.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-where">Outside<br>media<br>composer</div>
+    <div class="step-body">
+      <h3>Stop Background Services and empty the queue</h3>
+      <p>Transcode, consolidate, render and watch folders all run through a service that lives outside the application. Because it is a separate program, quitting Media Composer does not stop it, and it will happily keep working through a queue while you think the machine is idle.</p>
+      <ol>
+        <li>Find the <span class="k">Avid Background Services Manager</span> icon. It is in the taskbar on Windows and the menu bar on macOS.</li>
+        <li>Before stopping anything, choose <span class="k">Open Background Queue Window</span> and look at what is in the list. If a colleague queued an overnight transcode, you want to know that before you kill it.</li>
+        <li>Right click the icon on Windows, or click it on macOS, and choose <span class="k">Stop</span>.</li>
+        <li>To keep it from starting with the computer, remove it from startup. On Windows use Task Manager and the Startup tab. On macOS use System Settings and Login Items.</li>
+      </ol>
+      <div class="note rd"><b>Do not leave this off and forget.</b> If you later tick the background option in a Consolidate or Transcode dialog, the job will simply sit in the queue and never run. When somebody reports that a transcode is stuck, this is usually why.</div>
+      <figure>
+        <svg viewBox="0 0 860 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reconstruction of the Avid Background Services Manager taskbar menu">
+          <rect width="860" height="250" fill="#1b222c"/>
+          <rect x="0" y="206" width="860" height="44" fill="#11161d"/>
+          <line x1="0" y1="206" x2="860" y2="206" stroke="#3a4553"/>
+          <g transform="translate(600,228)">
+            <rect x="-11" y="-11" width="22" height="22" rx="4" fill="#2b3541" stroke="#e0a340" stroke-width="1.6"/>
+            <path d="M-5 -4 h10 M-5 0 h10 M-5 4 h7" stroke="#e0a340" stroke-width="1.7" stroke-linecap="round"/>
+          </g>
+          <text x="626" y="233" font-family="IBM Plex Mono,monospace" font-size="11" fill="#7c8a9a">TASKBAR / MENU BAR</text>
+          <path d="M600 210 l0 -14" stroke="#e0a340" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+          <rect x="470" y="34" width="300" height="158" rx="3" fill="#2b3541" stroke="#4a5563"/>
+          <text x="488" y="58" font-family="IBM Plex Sans,sans-serif" font-size="11" fill="#7c8a9a" letter-spacing="1.3">AVID BACKGROUND SERVICES</text>
+          <line x1="478" y1="68" x2="762" y2="68" stroke="#4a5563"/>
+          <g font-family="IBM Plex Sans,sans-serif" font-size="13">
+            <rect x="474" y="78" width="292" height="26" rx="2" fill="#e0a340"/>
+            <text x="490" y="96" fill="#1b222c" font-weight="600">Stop Background Services</text>
+            <text x="490" y="124" fill="#7c8a9a">Start Background Services</text>
+            <line x1="478" y1="136" x2="762" y2="136" stroke="#4a5563"/>
+            <text x="490" y="160" fill="#cdd9e5">Open Background Queue Window</text>
+            <text x="490" y="182" fill="#cdd9e5">Preferences…</text>
+          </g>
+          <text x="60" y="70" font-family="Barlow Condensed,sans-serif" font-size="26" fill="#f0f6fc" letter-spacing=".5">CHECK THE QUEUE FIRST</text>
+          <text x="60" y="100" font-family="IBM Plex Sans,sans-serif" font-size="14" fill="#a9b7c5">Open the Background Queue Window</text>
+          <text x="60" y="122" font-family="IBM Plex Sans,sans-serif" font-size="14" fill="#a9b7c5">before you stop anything, so you</text>
+          <text x="60" y="144" font-family="IBM Plex Sans,sans-serif" font-size="14" fill="#a9b7c5">do not kill somebody else's job.</text>
+          <rect x="46" y="44" width="4" height="112" fill="#4dd6e8"/>
+        </svg>
+        <figcaption>The service is controlled from the operating system, not from a Media Composer menu.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-where">Make it<br>stick</div>
+    <div class="step-body">
+      <h3>Site Settings, so every new project starts quiet</h3>
+      <p>Everything above is per project or per session, which is why the problem keeps coming back. Media Composer solves this with Site Settings. When the application opens a new project it reads the Site Settings file first and loads whatever it finds there, and only then loads the project and user settings that were not already covered. Put your transcript choices in Site Settings and every project created on that machine inherits them.</p>
+      <ol>
+        <li>Set up one project exactly the way you want it, with the transcript settings above already applied.</li>
+        <li>Open the <span class="k">Settings</span> tab in the Project window.</li>
+        <li>Select the settings you want to make permanent, then copy them into the <span class="k">Site Settings</span> window.</li>
+        <li>The Site Settings file lives in the Settings folder at the root of the Media Composer installation. Copy that one file to the other workstations and they all behave the same.</li>
+      </ol>
+      <div class="note"><b>This is the answer to doing it once.</b> For a room of edit suites, a single Site Settings file distributed by the engineering team beats twelve editors each remembering to click a gear.</div>
+      <figure>
+        <svg viewBox="0 0 860 232" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing how Site Settings are loaded before project and user settings">
+          <rect width="860" height="232" fill="#1b222c"/>
+          <text x="40" y="44" font-family="IBM Plex Mono,monospace" font-size="11" fill="#7c8a9a" letter-spacing="1.6">WHAT MEDIA COMPOSER READS WHEN A PROJECT OPENS</text>
+
+          <rect x="40" y="66" width="212" height="88" rx="4" fill="#242d39" stroke="#e0a340" stroke-width="1.6"/>
+          <text x="60" y="96" font-family="Barlow Condensed,sans-serif" font-size="24" fill="#e0a340">1 &nbsp;SITE SETTINGS</text>
+          <text x="60" y="120" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#a9b7c5">Read first, applies to</text>
+          <text x="60" y="138" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#a9b7c5">every project on the machine</text>
+
+          <path d="M262 110 l30 0 m-8 -5 l8 5 l-8 5" stroke="#4a5563" stroke-width="1.6" fill="none"/>
+
+          <rect x="302" y="66" width="212" height="88" rx="4" fill="#212a35" stroke="#3a4553"/>
+          <text x="322" y="96" font-family="Barlow Condensed,sans-serif" font-size="24" fill="#cdd9e5">2 &nbsp;PROJECT</text>
+          <text x="322" y="120" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#7c8a9a">Only the settings not</text>
+          <text x="322" y="138" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#7c8a9a">already covered above</text>
+
+          <path d="M524 110 l30 0 m-8 -5 l8 5 l-8 5" stroke="#4a5563" stroke-width="1.6" fill="none"/>
+
+          <rect x="564" y="66" width="212" height="88" rx="4" fill="#212a35" stroke="#3a4553"/>
+          <text x="584" y="96" font-family="Barlow Condensed,sans-serif" font-size="24" fill="#cdd9e5">3 &nbsp;USER</text>
+          <text x="584" y="120" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#7c8a9a">Your personal</text>
+          <text x="584" y="138" font-family="IBM Plex Sans,sans-serif" font-size="12.5" fill="#7c8a9a">preferences last</text>
+
+          <rect x="40" y="176" width="736" height="34" rx="4" fill="#181e26" stroke="#2f3945"/>
+          <text x="58" y="198" font-family="IBM Plex Sans,sans-serif" font-size="13" fill="#4dd6e8">Put the transcript settings in box one and you never have to think about boxes two and three again.</text>
+        </svg>
+        <figcaption>Site Settings load ahead of project and user settings, which is what makes them the permanent fix.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-where">At the<br>operating<br>system</div>
+    <div class="step-body">
+      <h3>The last resort, and when not to use it</h3>
+      <p>If a station still shows background activity after everything above, the remaining levers are at system level. These are heavier, they are the ones most likely to cause a support call later, and on a facility machine they belong to the engineering team rather than to you.</p>
+      <ol>
+        <li><b>Startup items.</b> On Windows open Task Manager and use the Startup tab to stop Avid Link and Background Services launching at login. On macOS use System Settings and Login Items.</li>
+        <li><b>Services.</b> On Windows, <span class="k">services.msc</span> lists the Avid services and lets you set a startup type of Manual instead of Automatic. Manual is far safer than Disabled, because the service can still be brought up when something genuinely needs it.</li>
+        <li><b>Licensing.</b> If the PhraseFind AI option is not activated on the machine at all, the indexer has nothing to do. On a facility that never uses dialogue search, not licensing the option is the cleanest possible fix.</li>
+        <li><b>Removing the plug-in.</b> With Media Composer closed, the phonetic index plug-in can be moved out of the application's plug-in folder. This disables the feature completely and permanently for that installation.</li>
+      </ol>
+      <div class="note rd"><b>Read this before touching anything in this box.</b> On a workstation connected to NEXIS, Interplay or MediaCentral, the Media Indexer is how shared media is found, and stopping it will make media appear to go offline. Avid Link is part of licence checking on subscription and floating licences, so removing it can stop Media Composer launching at all. Removing a plug-in from the application folder will usually be undone by the next update. None of this should be done on a shared edit suite without your systems engineer agreeing first.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== VERIFY ===================== -->
+<section id="verify">
+  <div class="sec-head">
+    <p class="eyebrow">Part three</p>
+    <h2>Check that it actually worked</h2>
+    <p class="lede">Do not trust a menu click. Three quick checks tell you whether the machine is genuinely quiet.</p>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>Check</th><th>Where</th><th>What quiet looks like</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Indexer state</td>
+        <td class="mono">Edit &gt; Find</td>
+        <td>The indicator beside PhraseFind AI Index is red, meaning indexing is stopped.</td>
+      </tr>
+      <tr>
+        <td>Bin state</td>
+        <td class="mono">Bin Container sidebar</td>
+        <td>The bins you excluded read Transcription Off in the column beside the name.</td>
+      </tr>
+      <tr>
+        <td>Background queue</td>
+        <td class="mono">Taskbar or menu bar icon</td>
+        <td>The Background Queue Window is empty and the service reports stopped.</td>
+      </tr>
+      <tr>
+        <td>Processes, Windows</td>
+        <td class="mono">Task Manager</td>
+        <td>No sustained CPU from AvidBackgroundServicesManager.exe or the transcode engine while you are not exporting.</td>
+      </tr>
+      <tr>
+        <td>Processes, macOS</td>
+        <td class="mono">Activity Monitor</td>
+        <td>Search for Avid and confirm nothing is holding CPU when Media Composer is sitting still.</td>
+      </tr>
+      <tr>
+        <td>Real world test</td>
+        <td class="mono">Your timeline</td>
+        <td>Import a fresh batch of rushes and scrub immediately. Before the change the machine hesitates, after it should not.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===================== REVERSE ===================== -->
+<section id="reverse">
+  <div class="sec-head">
+    <p class="eyebrow">Part four</p>
+    <h2>Putting it back</h2>
+    <p class="lede">Nothing here is destructive and every step reverses. If a documentary job arrives where searching an interview by word is genuinely worth the CPU, turn it back on for that project and leave the rest of the room alone.</p>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>To undo</th><th>Do this</th></tr></thead>
+    <tbody>
+      <tr><td>Indexing stopped</td><td>Edit &gt; Find, gear icon, then Start PhraseFind AI Indexing. Indexing resumes and works through the backlog.</td></tr>
+      <tr><td>Bin excluded</td><td>Right click the bin and choose Include Bin in Transcription.</td></tr>
+      <tr><td>New bins not enrolled</td><td>Transcript Settings, tick Include all new bins in transcription again.</td></tr>
+      <tr><td>Background Services stopped</td><td>Click the taskbar or menu bar icon and choose Start.</td></tr>
+      <tr><td>Transcripts deleted</td><td>They regenerate from the media, so this costs processing time but no data. Use Manage Transcripts to see what exists.</td></tr>
+      <tr><td>Site Settings changed</td><td>Remove the copied settings from the Site Settings window, and new projects go back to Avid's defaults.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+
+<footer><div class="wrap">
+  <h4>Where this comes from</h4>
+  <p style="max-width:70ch">Written from Avid's own release notes and knowledge base articles, cross checked against the published What's New documents for versions 2024.2 through 2025.6 and against facility guidance from post houses that hit the same problem. Menu wording moves slightly between releases, so if a label reads differently on your station the location will still be right.</p>
+  <ul>
+    <li><a href="https://kb.avid.com/pkb/articles/en_US/How_To/disable-indexing-Transcript-Tool-PhraseFind-ScriptSync">Avid Knowledge Base, how to disable indexing for Transcript Tool, PhraseFind and ScriptSync</a></li>
+    <li><a href="https://resources.avid.com/SupportFiles/attach/README_Avid_Editor_v24.6.pdf">Avid Editing Application ReadMe, on pausing and stopping background indexing</a></li>
+    <li><a href="https://resources.avid.com/SupportFiles/attach/WhatsNew_MediaComposer_v24.6.pdf">What's New in Media Composer 2024.6, on including and excluding bins</a></li>
+    <li><a href="https://www.avid.com/resource-center/whats-new-avid-media-composer-20256">What's New in Media Composer 2025.6, on transcript settings and the Fast Menu</a></li>
+    <li><a href="https://resources.avid.com/SupportFiles/attach/Settings_and_You_R2.pdf">Avid, Settings and You, on Site, Project and User settings</a></li>
+  </ul>
+  <div class="sig">
+    PREPARED FOR THE EDIT SUITES &nbsp;·&nbsp; MANTRA PRODUCTIONS &nbsp;·&nbsp; v1 (a) &nbsp;·&nbsp; 7.8.2026<br>
+    Not affiliated with or endorsed by Avid Technology. Avid and Media Composer are trademarks of Avid Technology, Inc.<br>
+    All interface figures are original drawings, not screenshots.
+  </div>
+</div></footer>
+
+</body>
+</html>
